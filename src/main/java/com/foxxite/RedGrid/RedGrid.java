@@ -1,0 +1,69 @@
+package com.foxxite.RedGrid;
+
+import com.foxxite.RedGrid.listeners.SignListener;
+import dev.rollczi.litecommands.LiteCommands;
+import dev.rollczi.litecommands.adventure.LiteAdventureExtension;
+import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
+import lombok.Getter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.command.CommandSender;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public final class RedGrid extends JavaPlugin {
+
+    @Getter
+    static RedGrid instance;
+
+    @Getter
+    private DatabaseManager databaseManager;
+
+    @Getter
+    private final MiniMessage miniMessage = MiniMessage.miniMessage();
+
+    @Getter
+    private Component prefix = miniMessage.deserialize("<red>[<bold>RedGrid</bold>]</red> <gray>");
+
+    private LiteCommands<CommandSender> liteCommands;
+
+    @Override
+    public void onEnable() {
+        // Plugin startup logic
+
+        RedGrid.instance = this;
+
+        databaseManager = new DatabaseManager();
+
+        liteCommands = LiteBukkitFactory.builder("redgrid", this)
+                                        //.commands(
+                                        //        // your commands
+                                        //        InteractCommand.class
+                                        //)
+                                        .extension(new LiteAdventureExtension<>(), config -> config
+                                                .miniMessage(true)
+                                                .legacyColor(true)
+                                                .colorizeArgument(true)
+                                                .serializer(miniMessage)
+                                        )
+                                        .build();
+
+        getServer().getPluginManager().registerEvents(new SignListener(), this);
+
+
+        getLogger().info(getPluginMeta().getName() + " " + getPluginMeta().getVersion() + " has been enabled!");
+    }
+
+    @Override
+    public void onDisable() {
+        // Plugin shutdown logic
+        if (liteCommands != null) {
+            liteCommands.unregister();
+        }
+
+        if (databaseManager != null) {
+            databaseManager.close(); // flush and safely close database
+        }
+
+        getLogger().info(getPluginMeta().getName() + " " + getPluginMeta().getVersion() + " has been disabled!");
+    }
+}

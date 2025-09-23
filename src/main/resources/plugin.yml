@@ -1,0 +1,17 @@
+name: RedGrid
+description: A modern Wireless Redstone plugin.
+authors: [Foxxite, Articca]
+
+version: "${project.version}"
+main: com.foxxite.RedGrid.RedGrid
+api-version: '1.21.7'
+
+libraries:
+  - com.github.ben-manes.caffeine:caffeine:3.2.2
+  - com.aventrix.jnanoid:jnanoid:2.0.0
+  - com.zaxxer:HikariCP:7.0.2
+  - org.xerial:sqlite-jdbc:3.50.3.0
+  - com.j256.ormlite:ormlite-core:6.1
+  - com.j256.ormlite:ormlite-jdbc:6.1
+
+soft-depend: ["PlaceholderAPI"]
