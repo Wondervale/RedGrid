@@ -1,5 +1,6 @@
 package com.foxxite.RedGrid;
 
+import com.foxxite.RedGrid.listeners.RedstoneListener;
 import com.foxxite.RedGrid.listeners.SignListener;
 import dev.rollczi.litecommands.LiteCommands;
 import dev.rollczi.litecommands.adventure.LiteAdventureExtension;
@@ -48,6 +49,7 @@ public final class RedGrid extends JavaPlugin {
                                         .build();
 
         getServer().getPluginManager().registerEvents(new SignListener(), this);
+        getServer().getPluginManager().registerEvents(new RedstoneListener(), this);
 
 
         getLogger().info(getPluginMeta().getName() + " " + getPluginMeta().getVersion() + " has been enabled!");
