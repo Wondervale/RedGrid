@@ -31,17 +31,6 @@ public class Channel {
     public Channel(String name, UUID creator) {
         this.name = name;
         this.creator = creator;
-
-        // Save to database if not exists
-        try {
-            if (RedGrid.getInstance().getDatabaseManager().getChannelDao().queryForId(name) == null) {
-                RedGrid.getInstance().getDatabaseManager().getChannelDao().create(this);
-            }
-        } catch (Exception e) {
-            RedGrid.getInstance().getLogger().severe(String.format(
-                    "Failed to create or retrieve channel '%s' from database", name));
-            e.printStackTrace();
-        }
     }
 
     public void addTransponder(Transponder transponder) {

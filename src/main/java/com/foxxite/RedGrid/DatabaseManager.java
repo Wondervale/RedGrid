@@ -12,7 +12,6 @@ import com.j256.ormlite.table.TableUtils;
 import lombok.Getter;
 
 import org.bukkit.block.Sign;
-import org.bukkit.block.data.Rotatable;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -57,6 +56,7 @@ public class DatabaseManager {
                 RedGrid.getInstance().getLogger().info("Database closed successfully!");
             }
         } catch (Exception e) {
+            RedGrid.getInstance().getLogger().severe("Failed to close database connection!");
             e.printStackTrace();
         }
     }
@@ -77,6 +77,8 @@ public class DatabaseManager {
             }
             return channel;
         } catch (SQLException e) {
+            RedGrid.getInstance().getLogger().severe(String.format(
+                    "Failed to create or retrieve channel '%s' from database", id));
             e.printStackTrace();
             return null;
         }
@@ -92,11 +94,33 @@ public class DatabaseManager {
                     sign.getBlock().getLocation()
             );
 
-            transponderDao.create(transponder);
+            transponderDao.createOrUpdate(transponder);
 
             return true;
         }
         catch (SQLException e) {
+            RedGrid.getInstance().getLogger().severe("Failed to create transponder in database!");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean deleteTransponder(Sign sign) {
+        try {
+            Transponder transponder = transponderDao.queryForId(Transponder.generateId(sign.getBlock()
+                                                                                           .getLocation()));
+            if (transponder != null) {
+                transponderDao.delete(transponder);
+                return true;
+            } else {
+                RedGrid.getInstance()
+                       .getLogger()
+                       .warning("Transponder not found in database for deletion.");
+                return false;
+            }
+        }
+        catch (SQLException e) {
+            RedGrid.getInstance().getLogger().severe("Failed to delete transponder from database!");
             e.printStackTrace();
             return false;
         }

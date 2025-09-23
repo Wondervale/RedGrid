@@ -55,15 +55,19 @@ public class Transponder {
         this.x = location.getBlockX();
         this.y = location.getBlockY();
         this.z = location.getBlockZ();
-        this.id = generateId();
+        this.id = generateId(location);
         this.channel = channel;
         this.isTransmitter = isTransmitter;
         this.isWallSign = isWallSign;
         this.facing = facing.name(); // store as String
     }
 
-    private String generateId() {
-        return String.format("%s_%d_%d_%d", world, x, y, z);
+    public static String generateId(Location location) {
+        return String.format("%s_%d_%d_%d",
+                location.getWorld().getName(),
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ());
     }
 
     public BlockFace getBlockFace() {
