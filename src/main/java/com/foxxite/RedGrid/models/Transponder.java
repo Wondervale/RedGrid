@@ -47,7 +47,8 @@ public class Transponder {
     private Channel channel;
 
     // No-arg constructor required by ORMLite
-    public Transponder() {}
+    public Transponder() {
+    }
 
     public Transponder(Channel channel, boolean isTransmitter, boolean isWallSign, BlockFace facing,
                        Location location) {
@@ -64,13 +65,20 @@ public class Transponder {
 
     public static String generateId(Location location) {
         return String.format("%s_%d_%d_%d",
-                location.getWorld().getName(),
-                location.getBlockX(),
-                location.getBlockY(),
-                location.getBlockZ());
+                             location.getWorld().getName(),
+                             location.getBlockX(),
+                             location.getBlockY(),
+                             location.getBlockZ());
     }
 
     public BlockFace getBlockFace() {
         return BlockFace.valueOf(facing);
+    }
+
+    public Location getLocation() {
+        return new Location(
+                org.bukkit.Bukkit.getWorld(world),
+                x, y, z
+        );
     }
 }

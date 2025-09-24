@@ -1,13 +1,13 @@
 package com.foxxite.RedGrid.models;
 
-import com.foxxite.RedGrid.RedGrid;
+import java.util.UUID;
+
 import com.j256.ormlite.dao.ForeignCollection;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.field.ForeignCollectionField;
 import com.j256.ormlite.table.DatabaseTable;
 import lombok.Getter;
-
-import java.util.UUID;
+import lombok.Setter;
 
 @DatabaseTable(tableName = "channels")
 public class Channel {
@@ -22,6 +22,7 @@ public class Channel {
 
     @DatabaseField(canBeNull = false)
     @Getter
+    @Setter
     private int activations = 0;
 
     // One-to-many relationship to Transponder
@@ -30,7 +31,8 @@ public class Channel {
     private ForeignCollection<Transponder> transponders;
 
     // ORMLite requires a no-arg constructor
-    public Channel() {}
+    public Channel() {
+    }
 
     public Channel(String name, UUID creator) {
         this.name = name;

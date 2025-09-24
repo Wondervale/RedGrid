@@ -2,6 +2,7 @@ package com.foxxite.RedGrid;
 
 import com.foxxite.RedGrid.listeners.RedstoneListener;
 import com.foxxite.RedGrid.listeners.SignListener;
+import com.foxxite.RedGrid.listeners.WirelessListener;
 import dev.rollczi.litecommands.LiteCommands;
 import dev.rollczi.litecommands.adventure.LiteAdventureExtension;
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
@@ -15,13 +16,10 @@ public final class RedGrid extends JavaPlugin {
 
     @Getter
     static RedGrid instance;
-
-    @Getter
-    private DatabaseManager databaseManager;
-
     @Getter
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
-
+    @Getter
+    private DatabaseManager databaseManager;
     @Getter
     private Component prefix = miniMessage.deserialize("<red>[<bold>RedGrid</bold>]</red> <gray>");
 
@@ -50,6 +48,7 @@ public final class RedGrid extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new SignListener(), this);
         getServer().getPluginManager().registerEvents(new RedstoneListener(), this);
+        getServer().getPluginManager().registerEvents(new WirelessListener(), this);
 
 
         getLogger().info(getPluginMeta().getName() + " " + getPluginMeta().getVersion() + " has been enabled!");

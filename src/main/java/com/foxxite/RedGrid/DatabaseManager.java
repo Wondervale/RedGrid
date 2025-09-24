@@ -1,5 +1,9 @@
 package com.foxxite.RedGrid;
 
+import java.io.File;
+import java.sql.SQLException;
+import java.util.UUID;
+
 import com.foxxite.RedGrid.models.Channel;
 import com.foxxite.RedGrid.models.Transponder;
 import com.foxxite.RedGrid.utils.SignType;
@@ -10,12 +14,7 @@ import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import lombok.Getter;
-
 import org.bukkit.block.Sign;
-
-import java.io.File;
-import java.sql.SQLException;
-import java.util.UUID;
 
 public class DatabaseManager {
 
@@ -26,7 +25,8 @@ public class DatabaseManager {
     public DatabaseManager() {
         try {
             File dbFile = new File(RedGrid.getInstance().getDataFolder(), "database.db");
-            if (!dbFile.exists()) dbFile.getParentFile().mkdirs();
+            if (!dbFile.exists())
+                dbFile.getParentFile().mkdirs();
 
             // Create ORMLite connection source
             connectionSource = new JdbcConnectionSource("jdbc:sqlite:" + dbFile.getAbsolutePath());
@@ -40,7 +40,8 @@ public class DatabaseManager {
             transponderDao = DaoManager.createDao(connectionSource, Transponder.class);
 
             RedGrid.getInstance().getLogger().info("Database initialized successfully.");
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             throw new RuntimeException("Failed to initialize database", e);
         }
     }
@@ -55,7 +56,8 @@ public class DatabaseManager {
                 connectionSource.close();
                 RedGrid.getInstance().getLogger().info("Database closed successfully!");
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             RedGrid.getInstance().getLogger().severe("Failed to close database connection!");
             e.printStackTrace();
         }
@@ -65,7 +67,10 @@ public class DatabaseManager {
      * Example async executor for database operations to prevent blocking the main thread.
      */
     public void runAsync(Runnable task) {
-        RedGrid.getInstance().getServer().getScheduler().runTaskAsynchronously(RedGrid.getInstance(), task);
+        RedGrid.getInstance()
+               .getServer()
+               .getScheduler()
+               .runTaskAsynchronously(RedGrid.getInstance(), task);
     }
 
     public Channel getOrCreateChannel(String id, UUID creator) {
@@ -76,7 +81,8 @@ public class DatabaseManager {
                 channelDao.create(channel);
             }
             return channel;
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             RedGrid.getInstance().getLogger().severe(String.format(
                     "Failed to create or retrieve channel '%s' from database", id));
             e.printStackTrace();
@@ -144,6 +150,44 @@ public class DatabaseManager {
             RedGrid.getInstance().getLogger().severe("Failed to delete transponder from database!");
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public Channel getChannelByName(String name) {
+        try {
+            return channelDao.queryForId(name);
+        }
+        catch (SQLException e) {
+            RedGrid.getInstance().getLogger().severe(String.format(
+                    "Failed to retrieve channel '%s' from database", name));
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public int incrementChannelActivations(Channel channel) {
+        try {
+            channelDao.refresh(channel);
+            channel.setActivations(channel.getActivations() + 1);
+            channelDao.update(channel);
+            return channel.getActivations();
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            return channel.getActivations();
+        }
+    }
+
+    public int decrementChannelActivations(Channel channel) {
+        try {
+            channelDao.refresh(channel);
+            channel.setActivations(Math.max(0, channel.getActivations() - 1));
+            channelDao.update(channel);
+            return channel.getActivations();
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            return channel.getActivations();
         }
     }
 }

@@ -5,6 +5,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 import com.foxxite.RedGrid.RedGrid;
+import com.foxxite.RedGrid.models.Channel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.block.BlockFace;
@@ -21,7 +22,8 @@ public class Utils {
     }};
 
     public static SignType getSignType(List<Component> lines) {
-        if (lines == null || lines.isEmpty()) return SignType.INVALID;
+        if (lines == null || lines.isEmpty())
+            return SignType.INVALID;
         return getSignType(componentToString(lines.getFirst()));
     }
 
@@ -46,34 +48,49 @@ public class Utils {
         return getSignType(firstLine) == SignType.INVALID || getSignType(firstLine) == SignType.OTHER_PLUGIN;
     }
 
-    public static boolean isWallSign(Sign sing)
-    {
+    public static boolean isWallSign(Sign sing) {
         return sing.getBlockData() instanceof org.bukkit.block.data.type.WallSign;
     }
 
-    public static BlockFace getSignFacingDirection(Sign sing)
-    {
-        return ((Rotatable) sing.getBlockData()).getRotation();
+    public static BlockFace getSignFacingDirection(Sign sign) {
+        if (isWallSign(sign)) {
+            return ((org.bukkit.block.data.type.WallSign) sign.getBlockData()).getFacing();
+        }
+        
+        return ((Rotatable) sign.getBlockData()).getRotation();
     }
 
-    public static String componentToString(Component component)
-    {
+    public static Channel getSignChannel(Sign sign) {
+        String channelName = componentToString(sign.getSide(Side.FRONT).line(1)).isEmpty()
+                ? componentToString(sign.getSide(Side.BACK).line(1)).toLowerCase()
+                : componentToString(sign.getSide(Side.FRONT).line(1)).toLowerCase();
+        return RedGrid.getInstance().getDatabaseManager().getChannelByName(channelName);
+    }
+
+    public static String componentToString(Component component) {
         return PlainTextComponentSerializer.plainText().serialize(component);
     }
 
-    public static void colorizeSign(Sign sign, SignType type, String channelName)
-    {
+    public static void colorizeSign(Sign sign, SignType type, String channelName) {
         sign.setWaxed(true);
 
         SignSide front = sign.getSide(Side.FRONT);
 
         front.line(0, switch (type) {
-            case TRANSMITTER -> RedGrid.getInstance().getMiniMessage().deserialize("<red>[<bold>RGT</bold>]</red>");
-            case RECEIVER -> RedGrid.getInstance().getMiniMessage().deserialize("<red>[<bold>RGR</bold>]</red>");
-            default -> RedGrid.getInstance().getMiniMessage().deserialize("<red>[<bold>RGX</bold>]</red>");
+            case TRANSMITTER -> RedGrid.getInstance()
+                                       .getMiniMessage()
+                                       .deserialize("<red>[<bold>RGT</bold>]</red>");
+            case RECEIVER -> RedGrid.getInstance()
+                                    .getMiniMessage()
+                                    .deserialize("<red>[<bold>RGR</bold>]</red>");
+            default -> RedGrid.getInstance()
+                              .getMiniMessage()
+                              .deserialize("<red>[<bold>RGX</bold>]</red>");
         });
 
-        front.line(1, RedGrid.getInstance().getMiniMessage().deserialize(String.format("<blue>%s</blue>", channelName)));
+        front.line(1, RedGrid.getInstance()
+                             .getMiniMessage()
+                             .deserialize(String.format("<blue>%s</blue>", channelName)));
 
         // Update the  sign state
         sign.update();

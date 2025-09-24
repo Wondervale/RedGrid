@@ -1,11 +1,15 @@
 package com.foxxite.RedGrid.listeners;
 
+import java.util.concurrent.TimeUnit;
+
+import com.foxxite.RedGrid.DatabaseManager;
 import com.foxxite.RedGrid.RedGrid;
+import com.foxxite.RedGrid.events.ChannelActivationChangeEvent;
+import com.foxxite.RedGrid.models.Channel;
 import com.foxxite.RedGrid.utils.SignType;
 import com.foxxite.RedGrid.utils.Utils;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -17,16 +21,23 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockRedstoneEvent;
-
-import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.NotNull;
 
 public class RedstoneListener implements Listener {
 
     // Caffeine cache storing locations to ignore
-    private static final Cache<Location, Boolean> ignoreCache = Caffeine.newBuilder()
-                                                                        .expireAfterWrite(10, TimeUnit.MINUTES) // optional expiration
-                                                                        .maximumSize(10_000)
-                                                                        .build();
+    private static final Cache<@NotNull Location, Boolean> ignoreCache = Caffeine.newBuilder()
+                                                                                 .expireAfterWrite(10, TimeUnit.MINUTES) // optional expiration
+                                                                                 .maximumSize(10_000)
+                                                                                 .build();
+
+    // Static method to remove a location from the cache
+    public static void removeFromCache(Location loc) {
+        if (ignoreCache.getIfPresent(loc) != null)
+            return;
+
+        ignoreCache.invalidate(loc);
+    }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onRedstoneChange(BlockRedstoneEvent event) {
@@ -34,7 +45,8 @@ public class RedstoneListener implements Listener {
         Location loc = block.getLocation();
 
         // Ignore this block if cached
-        if (ignoreCache.getIfPresent(loc) != null) return;
+        if (ignoreCache.getIfPresent(loc) != null)
+            return;
 
         boolean foundSign = false;
 
@@ -49,7 +61,8 @@ public class RedstoneListener implements Listener {
 
             if (relative.getState() instanceof Sign sign) {
                 if (Utils.getSignType(sign.getSide(Side.FRONT).lines()) != SignType.TRANSMITTER &&
-                    Utils.getSignType(sign.getSide(Side.BACK).lines()) != SignType.TRANSMITTER) {
+                        Utils.getSignType(sign.getSide(Side.BACK)
+                                              .lines()) != SignType.TRANSMITTER) {
                     continue; // Not a RedGrid transmitter sign
                 }
 
@@ -79,18 +92,26 @@ public class RedstoneListener implements Listener {
     }
 
     private void handleSignPower(Sign sign, boolean powered) {
-        Component message = Component.text(String.format(
-                "Sign at %s %s!", sign.getBlock().getLocation(), powered ? "powered" : "unpowered"
-        ));
-        RedGrid.getInstance().getServer().broadcast(message);
+        Bukkit.getScheduler().runTaskAsynchronously(RedGrid.getInstance(), () -> {
+            Channel channel = Utils.getSignChannel(sign);
+            if (channel == null)
+                return;
 
-        // 👇 put your actual shared logic here
-    }
+            DatabaseManager db = RedGrid.getInstance().getDatabaseManager();
+            int oldActivations = channel.getActivations();
+            int newActivations;
 
-    // Static method to remove a location from the cache
-    public static void removeFromCache(Location loc) {
-        if (ignoreCache.getIfPresent(loc) != null) return;
+            if (powered) {
+                newActivations = db.incrementChannelActivations(channel); // returns updated value
+            } else {
+                newActivations = db.decrementChannelActivations(channel); // returns updated value
+            }
 
-        ignoreCache.invalidate(loc);
+            // Schedule the event to be fired on the main thread
+            Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
+                RedGrid.getInstance().getServer().getPluginManager()
+                       .callEvent(new ChannelActivationChangeEvent(channel, oldActivations, newActivations));
+            });
+        });
     }
 }
