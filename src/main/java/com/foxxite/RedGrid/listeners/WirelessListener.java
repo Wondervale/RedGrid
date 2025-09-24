@@ -20,6 +20,51 @@ import org.bukkit.event.Listener;
 
 public class WirelessListener implements Listener {
 
+    public static void placeSignBack(Location loc, Transponder transponder) {
+        // Throw if not on Bukkit main thread
+        if (!Bukkit.isPrimaryThread())
+            throw new IllegalStateException("placeSignBack must be called from the main thread");
+
+        // Determine sign type
+        SignType type = transponder.isTransmitter() ? SignType.TRANSMITTER : SignType.RECEIVER;
+
+        // Set the block to a wall sign or standing sign depending on the transponder
+        Material signMaterial = transponder.isWallSign() ?
+                Material.OAK_WALL_SIGN :
+                Material.OAK_SIGN;
+        loc.getBlock().setType(signMaterial);
+
+        if (!(loc.getBlock().getState() instanceof Sign))
+            return;
+
+        // Set facing direction
+        Sign sign = placeOakSignWithRotation(loc, transponder.getBlockFace(),
+                                             transponder.isWallSign());
+
+        // Colorize and set channel name
+        String channelName = transponder.getChannel().getName();
+        Utils.colorizeSign(sign, type, channelName);
+    }
+
+    static Sign placeOakSignWithRotation(final Location location, final BlockFace face,
+                                         boolean wallSign) {
+        final Block signBlock = location.getBlock();
+        final BlockData data = Bukkit.createBlockData(wallSign ?
+                                                              Material.OAK_WALL_SIGN :
+                                                              Material.OAK_SIGN);
+
+        if (data instanceof Rotatable rotatable) {
+            rotatable.setRotation(face);
+            signBlock.setBlockData(data);
+        } else {
+            final Directional directional = (Directional) data;
+            directional.setFacing(face);
+            signBlock.setBlockData(data);
+        }
+
+        return (Sign) signBlock.getState();
+    }
+
     @EventHandler
     public void onWirelessEvent(ChannelActivationChangeEvent event) {
         Channel channel = event.getChannel();
@@ -46,7 +91,9 @@ public class WirelessListener implements Listener {
                         if (powered) {
                             loc.getBlock().setType(Material.REDSTONE_BLOCK);
                         } else {
-                            placeSignBack(loc, transponder);
+                            Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
+                                placeSignBack(loc, transponder);
+                            });
                         }
                     });
                 });
@@ -55,48 +102,5 @@ public class WirelessListener implements Listener {
                 e.printStackTrace();
             }
         });
-    }
-
-    void placeSignBack(Location loc, Transponder transponder) {
-        // Determine sign type
-        SignType type = transponder.isTransmitter() ? SignType.TRANSMITTER : SignType.RECEIVER;
-
-        // Set the block to a wall sign or standing sign depending on the transponder
-        Material signMaterial = transponder.isWallSign() ?
-                Material.OAK_WALL_SIGN :
-                Material.OAK_SIGN;
-        loc.getBlock().setType(signMaterial);
-
-        // Schedule sync task to modify the sign after it's placed
-        Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
-            if (!(loc.getBlock().getState() instanceof Sign))
-                return;
-
-            // Set facing direction
-            Sign sign = placeOakSignWithRotation(loc, transponder.getBlockFace(),
-                                                 transponder.isWallSign());
-
-            // Colorize and set channel name
-            String channelName = transponder.getChannel().getName();
-            Utils.colorizeSign(sign, type, channelName);
-        });
-    }
-
-    Sign placeOakSignWithRotation(final Location location, final BlockFace face, boolean wallSign) {
-        final Block signBlock = location.getBlock();
-        final BlockData data = Bukkit.createBlockData(wallSign ?
-                                                              Material.OAK_WALL_SIGN :
-                                                              Material.OAK_SIGN);
-
-        if (data instanceof Rotatable rotatable) {
-            rotatable.setRotation(face);
-            signBlock.setBlockData(data);
-        } else {
-            final Directional directional = (Directional) data;
-            directional.setFacing(face);
-            signBlock.setBlockData(data);
-        }
-
-        return (Sign) signBlock.getState();
     }
 }

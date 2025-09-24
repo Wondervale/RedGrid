@@ -4,6 +4,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.UUID;
 
+import com.foxxite.RedGrid.listeners.WirelessListener;
 import com.foxxite.RedGrid.models.Channel;
 import com.foxxite.RedGrid.models.Transponder;
 import com.foxxite.RedGrid.utils.SignType;
@@ -14,6 +15,7 @@ import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import lombok.Getter;
+import org.bukkit.Location;
 import org.bukkit.block.Sign;
 
 public class DatabaseManager {
@@ -111,7 +113,7 @@ public class DatabaseManager {
         }
     }
 
-    public boolean deleteTransponder(Sign sign) {
+    public void deleteTransponder(Sign sign) {
         try {
             String transponderId = Transponder.generateId(sign.getBlock().getLocation());
             Transponder transponder = transponderDao.queryForId(transponderId);
@@ -138,18 +140,15 @@ public class DatabaseManager {
                     }
                 }
 
-                return true;
             } else {
                 RedGrid.getInstance()
                        .getLogger()
                        .warning("Transponder not found in database for deletion.");
-                return false;
             }
         }
         catch (SQLException e) {
             RedGrid.getInstance().getLogger().severe("Failed to delete transponder from database!");
             e.printStackTrace();
-            return false;
         }
     }
 
@@ -173,6 +172,9 @@ public class DatabaseManager {
             return channel.getActivations();
         }
         catch (SQLException e) {
+            RedGrid.getInstance()
+                   .getLogger()
+                   .severe("Failed to increment channel activations in database!");
             e.printStackTrace();
             return channel.getActivations();
         }
@@ -186,8 +188,34 @@ public class DatabaseManager {
             return channel.getActivations();
         }
         catch (SQLException e) {
+            RedGrid.getInstance()
+                   .getLogger()
+                   .severe("Failed to decrement channel activations in database!");
             e.printStackTrace();
             return channel.getActivations();
         }
+    }
+
+    public void resetChannelActivations(Channel channel) {
+        try {
+            channel.setActivations(0);
+            channelDao.update(channel);
+        }
+        catch (SQLException e) {
+            RedGrid.getInstance()
+                   .getLogger()
+                   .severe("Failed to reset channel activations in database!");
+            e.printStackTrace();
+            return;
+        }
+
+        channel.getTransponders().forEach(transponder -> {
+            if (transponder.isTransmitter())
+                return;
+
+            Location loc = transponder.getLocation();
+
+            WirelessListener.placeSignBack(loc, transponder);
+        });
     }
 }

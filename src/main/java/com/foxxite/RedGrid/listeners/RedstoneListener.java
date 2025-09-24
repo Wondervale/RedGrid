@@ -41,6 +41,9 @@ public class RedstoneListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onRedstoneChange(BlockRedstoneEvent event) {
+        if (!RedGrid.getInstance().isListenToWorld())
+            return;
+
         Block block = event.getBlock();
         Location loc = block.getLocation();
 
