@@ -89,7 +89,7 @@ public class WirelessListener implements Listener {
 
                     Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
                         if (powered) {
-                            loc.getBlock().setType(Material.REDSTONE_BLOCK);
+                            placeRedstoneTorch(loc, transponder);
                         } else {
                             Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
                                 placeSignBack(loc, transponder);
@@ -102,5 +102,26 @@ public class WirelessListener implements Listener {
                 e.printStackTrace();
             }
         });
+    }
+
+    void placeRedstoneTorch(Location loc, Transponder transponder) {
+        Material torchMaterial = transponder.isWallSign() ?
+                Material.REDSTONE_WALL_TORCH :
+                Material.REDSTONE_TORCH;
+
+        final Block torchBlock = loc.getBlock();
+        final BlockData data = Bukkit.createBlockData(torchMaterial);
+
+        loc.getBlock().setType(torchMaterial);
+
+        if (data instanceof Directional directional) {
+            directional.setFacing(transponder.getBlockFace());
+            torchBlock.setBlockData(data);
+        } else {
+            torchBlock.setBlockData(data);
+        }
+
+        loc.getBlock().setBlockData(torchBlock.getBlockData());
+        loc.getBlock().getState().update();
     }
 }
