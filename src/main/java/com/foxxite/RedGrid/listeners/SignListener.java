@@ -28,12 +28,6 @@ public class SignListener implements Listener {
         Player player = event.getPlayer();
         Sign sign = (Sign) event.getBlock().getState();
 
-        player.sendMessage("Changed a sign!");
-        for (int i = 0; i < event.lines().size(); i++) {
-            Component line = event.line(i);
-            player.sendMessage("Line " + i + ": " + componentToString(line));
-        }
-
         String firstLine = componentToString(event.line(0));
         if (Utils.isInvalidSignType(firstLine)) return;
 

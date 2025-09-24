@@ -107,10 +107,31 @@ public class DatabaseManager {
 
     public boolean deleteTransponder(Sign sign) {
         try {
-            Transponder transponder = transponderDao.queryForId(Transponder.generateId(sign.getBlock()
-                                                                                           .getLocation()));
+            String transponderId = Transponder.generateId(sign.getBlock().getLocation());
+            Transponder transponder = transponderDao.queryForId(transponderId);
+
             if (transponder != null) {
+                Channel channel = transponder.getChannel();
+
+                // Delete the transponder
                 transponderDao.delete(transponder);
+
+                // If channel exists, check if it has any transponders left
+                if (channel != null) {
+                    long count = transponderDao.queryBuilder()
+                                               .where()
+                                               .eq("channel_id", channel.getName())
+                                               .countOf();
+
+                    if (count == 0) {
+                        channelDao.delete(channel);
+
+                        RedGrid.getInstance()
+                               .getLogger()
+                               .info(String.format("Deleted channel '%s' because it had no more transponders.", channel.getName()));
+                    }
+                }
+
                 return true;
             } else {
                 RedGrid.getInstance()
