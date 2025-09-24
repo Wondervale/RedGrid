@@ -72,19 +72,21 @@ public class RedstoneListener implements Listener {
                 foundSign = true;
                 BlockData data = relative.getBlockData();
 
-                if (data instanceof Directional dir) {
-                    // Wall sign: direct check
-                    Block attached = relative.getRelative(dir.getFacing().getOppositeFace());
-                    if (attached.equals(block)) {
-                        handleSignPower(sign, event.getNewCurrent() > 0);
+                Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
+                    boolean powered = relative.isBlockPowered() || relative.isBlockIndirectlyPowered();
+
+                    if (data instanceof Directional dir) {
+                        // Wall sign: direct check
+                        Block attached = relative.getRelative(dir.getFacing().getOppositeFace());
+
+                        if (!powered) {
+                            // Double-check for wall signs, as they can be a bit glitchy
+                            powered = attached.isBlockPowered() || attached.isBlockIndirectlyPowered();
+                        }
                     }
-                } else {
-                    // Standing sign: schedule delayed check
-                    Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
-                        boolean powered = relative.isBlockPowered() || relative.isBlockIndirectlyPowered();
-                        handleSignPower(sign, powered);
-                    });
-                }
+
+                    handleSignPower(sign, powered);
+                });
             }
         }
 
