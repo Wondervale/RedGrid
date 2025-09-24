@@ -20,6 +20,10 @@ public class Channel {
     @Getter
     private UUID creator;
 
+    @DatabaseField(canBeNull = false)
+    @Getter
+    private int activations = 0;
+
     // One-to-many relationship to Transponder
     @ForeignCollectionField(eager = false)
     @Getter
@@ -31,13 +35,5 @@ public class Channel {
     public Channel(String name, UUID creator) {
         this.name = name;
         this.creator = creator;
-    }
-
-    public void addTransponder(Transponder transponder) {
-        transponders.add(transponder);
-    }
-
-    public void removeTransponder(Transponder transponder) {
-        transponders.remove(transponder);
     }
 }

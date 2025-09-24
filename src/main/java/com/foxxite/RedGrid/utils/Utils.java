@@ -20,6 +20,11 @@ public class Utils {
         put("RGX", SignType.INVALID);
     }};
 
+    public static SignType getSignType(List<Component> lines) {
+        if (lines == null || lines.isEmpty()) return SignType.INVALID;
+        return getSignType(componentToString(lines.getFirst()));
+    }
+
     public static SignType getSignType(String firstLine) {
         // Make sure we start with a [ and end with a ]
         if (!firstLine.toUpperCase().startsWith("[RG") || !firstLine.toUpperCase().endsWith("]"))
@@ -37,8 +42,8 @@ public class Utils {
         return SignType.INVALID;
     }
 
-    public static boolean isValidSignType(String firstLine) {
-        return getSignType(firstLine) != SignType.INVALID && getSignType(firstLine) != SignType.OTHER_PLUGIN;
+    public static boolean isInvalidSignType(String firstLine) {
+        return getSignType(firstLine) == SignType.INVALID || getSignType(firstLine) == SignType.OTHER_PLUGIN;
     }
 
     public static boolean isWallSign(Sign sing)

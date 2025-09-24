@@ -12,11 +12,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 
 import static com.foxxite.RedGrid.utils.Utils.colorizeSign;
 import static com.foxxite.RedGrid.utils.Utils.componentToString;
@@ -38,7 +35,7 @@ public class SignListener implements Listener {
         }
 
         String firstLine = componentToString(event.line(0));
-        if (!Utils.isValidSignType(firstLine)) return;
+        if (Utils.isInvalidSignType(firstLine)) return;
 
         String channelName = componentToString(event.line(1)).toLowerCase();
         player.sendMessage("Channel name: " + channelName);
@@ -81,7 +78,7 @@ public class SignListener implements Listener {
         Sign sign = (Sign) event.getBlock().getState();
 
         String firstLine = componentToString(sign.getSide(Side.FRONT).line(0));
-        if (!Utils.isValidSignType(firstLine)) return;
+        if (Utils.isInvalidSignType(firstLine)) return;
 
         String channelName = componentToString(sign.getSide(Side.FRONT).line(1));
         if (channelName.isEmpty()) return;
@@ -120,7 +117,11 @@ public class SignListener implements Listener {
             sendPlayerMessage(player, String.format("<green>%s registered on channel <white>%s</white></green>",
                                                     capitalize(signType.name().toLowerCase()), channelName));
 
-            RedGrid.getInstance().getServer().getScheduler().runTask(RedGrid.getInstance(), () -> colorizeSign(sign, signType, channelName));
+            RedGrid.getInstance().getServer().getScheduler().runTask(RedGrid.getInstance(),
+                () -> {
+                    colorizeSign(sign, signType, channelName);
+                    RedstoneListener.removeFromCache(sign.getLocation());
+                });
         } else {
             sendPlayerMessage(player, String.format("<red>Failed to register %s!</red>\n\n<gray>Check the server console for errors.",
                                                     signType.name().toLowerCase()));
