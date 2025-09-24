@@ -4,7 +4,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.foxxite.RedGrid.DatabaseManager;
 import com.foxxite.RedGrid.RedGrid;
-import com.foxxite.RedGrid.events.ChannelActivationChangeEvent;
 import com.foxxite.RedGrid.models.Channel;
 import com.foxxite.RedGrid.utils.SignType;
 import com.foxxite.RedGrid.utils.Utils;
@@ -103,20 +102,12 @@ public class RedstoneListener implements Listener {
                 return;
 
             DatabaseManager db = RedGrid.getInstance().getDatabaseManager();
-            int oldActivations = channel.getActivations();
-            int newActivations;
 
             if (powered) {
-                newActivations = db.incrementChannelActivations(channel); // returns updated value
+                db.incrementChannelActivations(channel); // returns updated value
             } else {
-                newActivations = db.decrementChannelActivations(channel); // returns updated value
+                db.decrementChannelActivations(channel); // returns updated value
             }
-
-            // Schedule the event to be fired on the main thread
-            Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
-                RedGrid.getInstance().getServer().getPluginManager()
-                       .callEvent(new ChannelActivationChangeEvent(channel, oldActivations, newActivations));
-            });
         });
     }
 }

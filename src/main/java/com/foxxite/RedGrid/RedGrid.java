@@ -2,6 +2,8 @@ package com.foxxite.RedGrid;
 
 import java.util.List;
 
+import com.foxxite.RedGrid.commands.ChannelArgument;
+import com.foxxite.RedGrid.commands.RedGridCommand;
 import com.foxxite.RedGrid.listeners.RedstoneListener;
 import com.foxxite.RedGrid.listeners.SignListener;
 import com.foxxite.RedGrid.listeners.WirelessListener;
@@ -43,16 +45,17 @@ public final class RedGrid extends JavaPlugin {
         databaseManager = new DatabaseManager();
 
         liteCommands = LiteBukkitFactory.builder("redgrid", this)
-                                        //.commands(
-                                        //        // your commands
-                                        //        InteractCommand.class
-                                        //)
+                                        .commands(
+                                                // your commands
+                                                RedGridCommand.class
+                                        )
                                         .extension(new LiteAdventureExtension<>(), config -> config
                                                 .miniMessage(true)
                                                 .legacyColor(true)
                                                 .colorizeArgument(true)
                                                 .serializer(miniMessage)
                                         )
+                                        .argument(Channel.class, new ChannelArgument())
                                         .build();
 
         getServer().getPluginManager().registerEvents(new SignListener(), this);

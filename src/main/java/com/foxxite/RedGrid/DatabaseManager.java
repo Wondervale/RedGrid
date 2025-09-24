@@ -4,6 +4,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.UUID;
 
+import com.foxxite.RedGrid.events.ChannelActivationChangeEvent;
 import com.foxxite.RedGrid.listeners.WirelessListener;
 import com.foxxite.RedGrid.models.Channel;
 import com.foxxite.RedGrid.models.Transponder;
@@ -15,6 +16,7 @@ import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Sign;
 
@@ -164,35 +166,50 @@ public class DatabaseManager {
         }
     }
 
-    public int incrementChannelActivations(Channel channel) {
+    public void incrementChannelActivations(Channel channel) {
         try {
             channelDao.refresh(channel);
-            channel.setActivations(channel.getActivations() + 1);
+
+            int oldActivations = channel.getActivations();
+            int newActivations = oldActivations + 1;
+
+            channel.setActivations(newActivations);
             channelDao.update(channel);
-            return channel.getActivations();
+
+            Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
+                RedGrid.getInstance().getServer().getPluginManager()
+                       .callEvent(new ChannelActivationChangeEvent(channel, oldActivations, newActivations));
+            });
+
         }
         catch (SQLException e) {
             RedGrid.getInstance()
                    .getLogger()
                    .severe("Failed to increment channel activations in database!");
             e.printStackTrace();
-            return channel.getActivations();
         }
     }
 
-    public int decrementChannelActivations(Channel channel) {
+    public void decrementChannelActivations(Channel channel) {
         try {
             channelDao.refresh(channel);
-            channel.setActivations(Math.max(0, channel.getActivations() - 1));
+
+            int oldActivations = channel.getActivations();
+            int newActivations = Math.max(0, oldActivations - 1);
+
+            channel.setActivations(newActivations);
             channelDao.update(channel);
-            return channel.getActivations();
+
+            Bukkit.getScheduler().runTask(RedGrid.getInstance(), () -> {
+                RedGrid.getInstance().getServer().getPluginManager()
+                       .callEvent(new ChannelActivationChangeEvent(channel, oldActivations, newActivations));
+            });
         }
         catch (SQLException e) {
             RedGrid.getInstance()
                    .getLogger()
                    .severe("Failed to decrement channel activations in database!");
             e.printStackTrace();
-            return channel.getActivations();
         }
     }
 
